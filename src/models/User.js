@@ -12,7 +12,6 @@ const userSchema = new mongoose.Schema({
         type: String,
         unique: true,
         required: true,
-        trim: true,
         lowercase: true,
         validate(value) {
             if (!validator.isEmail(value)) {
@@ -29,7 +28,7 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     roles: {
-        type: Array
+        type: String
     },
     otp: {
         type: String
@@ -55,7 +54,7 @@ userSchema.statics.findByRoles = async (role) => {
         const users = await User.find()
         const validUsers = [];
         users.forEach(user => {
-            if(user.roles.includes(role)){
+            if(user.roles === role){
                 validUsers.push(user)
             }
         });

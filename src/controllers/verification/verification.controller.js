@@ -21,12 +21,12 @@ const sendVerificationMail = async (req, res) => {
             otp = undefined
         }, 120000)
         res.send({
-            "message": "verification mail sent! OTP will expire in 60 seconds"
+            "message": "verification mail sent! OTP will expire in 120 seconds"
         })
     }
     catch(e){
-        res.status(404).send({
-            "error": "there is something wrong with emails"
+        res.status(404).json({
+            error: "there is something wrong with emails"
         })
     }
 }
@@ -43,10 +43,10 @@ const otpVerify = async (req, res) => {
             req.body.name = 'John Doe'
             req.body.email = userEmail
             req.body.password = 'password'
-            req.body.roles = []
+            req.body.roles = ''
             req.body.otp = otp
             req.body.isVerified = true
-            const user = new User(req.body)
+            const user = new User(...req.body)
             console.log(user);
             await user.save()
             res.cookie('verifiedEmail', otp, {
@@ -59,9 +59,9 @@ const otpVerify = async (req, res) => {
         }
     }
     catch(err){
-        res.status(400).send({
-            "code": err,
-            "error": "otp is not verified"
+        res.status(400).json({
+            err,
+            error: "otp is not verified"
         })
     }
 }

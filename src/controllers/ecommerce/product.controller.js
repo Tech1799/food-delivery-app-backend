@@ -55,9 +55,26 @@ const readAllProducts = async(req, res)=>{
     res.send(res.paginatedResults)
 }
 
+const getProductImage = async(req, res)=>{
+    try{
+        const product = await Product.find({name: req.query.productName})
+        if(!product || !product.primaryImage){
+            res.status(400).json({error: 'product not found'})
+        }
+        res.set('Content-Type', 'image/png')
+        res.send(product.primaryImage)
+    }
+    catch(err){
+        res.status(400).json({
+            error: err.message
+        })
+    }
+}
+
 
 module.exports = {
     addProduct,
     addImages,
-    readAllProducts
+    readAllProducts,
+    getProductImage
 }
