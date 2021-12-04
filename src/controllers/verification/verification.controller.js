@@ -39,6 +39,7 @@ const sendVerificationMail = async (req, res) => {
 const otpVerify = async (req, res) => {
     try{
         const userEmail = req.body.email
+        console.log(otpObj[userEmail])
         if(req.body.otp != otpObj[userEmail]){
             res.status(400).send({
                 "error": "otp not matched"

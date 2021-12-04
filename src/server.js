@@ -35,7 +35,7 @@ app.use(express.urlencoded({
   app.all('*', checkUser);
   
   app.get("/", (req, res) => {
-    res.send("hello express! testing!! change:1")
+    res.send("hello express! testing!! change:2")
   });
 
   // verification routes
