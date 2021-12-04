@@ -1,7 +1,6 @@
-// const express = require('express')
 const User = require('../../models/User')
-const { verificationMail } = require('../../emails/signupOTP');
-var otpObj = {};
+const Otp = require('../../models/Otp')
+// const { verificationMail } = require('../../emails/signupOTP');
 
 
 const sendVerificationMail = async (req, res) => {
@@ -10,27 +9,37 @@ const sendVerificationMail = async (req, res) => {
         const mails = await User.find().select('email')
         const mailArr = []
         mails.forEach(mail => mailArr.push(mail.email))
-        console.log(mails);
-        if(userEmail === undefined){
-            res.send('please provide email as request')
+        if(userEmail === null){
+            res.status(400).json({
+                error: 'please provide email as request'
+            })
         }
         if(mailArr.includes(userEmail)){
+
             res.status(400).send('this email is already in use')
         }
         else{
-            otpObj[userEmail] = Math.floor(Math.random()*1000000).toString()
-            verificationMail(userEmail, otpObj[userEmail])
-            res.clearCookie('verifiedEmail')
-            setTimeout(()=>{
-                otpObj[userEmail] = undefined
-            }, 120000)
+            const rawOtp = Math.floor(Math.random()*1000000).toString()
+            const otp = new Otp({
+                email: userEmail,
+                otp: rawOtp,
+            })
+            console.log(otp);
+            // verificationMail(userEmail, rawOtp)
+            await otp.save()
+            res.clearCookie('unverifiedEmail')
+            res.cookie('unverifiedEmail', userEmail, {
+                httpOnly: true,
+                maxAge: 300*1000
+            })
             res.send({
-                "message": "verification mail sent! OTP will expire in 120 seconds"
+                "message": "verification mail sent! OTP will expire in 5 minutes"
             })
         }
     }
-    catch(e){
+    catch(err){
         res.status(404).json({
+            err,
             error: "there is something wrong with emails"
         })
     }
@@ -38,9 +47,18 @@ const sendVerificationMail = async (req, res) => {
 
 const otpVerify = async (req, res) => {
     try{
-        const userEmail = req.body.email
-        console.log(otpObj[userEmail])
-        if(req.body.otp != otpObj[userEmail]){
+        const userEmail = decodeURIComponent(req.cookies.unverifiedEmail)
+        console.log(userEmail)
+        if(!userEmail){
+            res.status(400).json({
+                error: "please provide email as request"
+            })
+        }
+        const otp = await Otp.find({ email: userEmail })
+        const otpArr = []
+        otp.forEach(mail => otpArr.push(mail.otp))
+        console.log(otpArr)
+        if(!otpArr.includes(req.body.otp)){
             res.status(400).send({
                 "error": "otp not matched"
             })
@@ -48,25 +66,27 @@ const otpVerify = async (req, res) => {
         else{
             const user = new User({
                 name: 'John Doe',
-                email: userEmail,
+                email: otp.email,
                 password: 'password',
-                otp: req.body.otp,
+                otp: otp.otp,
                 isVerified: true
             })
-            await user.save()
-            res.cookie('verifiedEmail', req.body.otp, {
+            res.clearCookie('verifiedOtp')
+            res.cookie('verifiedOtp', req.body.otp, {
                 httpOnly: true,
                 maxAge: 259200*1000
             })
+            // await user.save()
             res.send({
+                user,
                 "message": "email is verified"
             })
         }
     }
     catch(err){
         res.status(400).json({
-            err,
-            error: "otp is not verified"
+            error: err.message,
+            // error: "otp is not verified"
         })
     }
 }
