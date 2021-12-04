@@ -8,21 +8,26 @@ const sendVerificationMail = async (req, res) => {
     const userEmail =  req.body.email
     try{
         const mails = await User.find().select('email')
-        mails.forEach(mail => {
-            if(mail.email === userEmail){
-                return res.status(400).send('this email is already in use')
-                // throw new Error('this email is already in use!')
-            }
-        })
-        otpObj[userEmail] = Math.floor(Math.random()*1000000).toString()
-        verificationMail(userEmail, otpObj[userEmail])
-        res.clearCookie('verifiedEmail')
-        setTimeout(()=>{
-            otpObj[userEmail] = undefined
-        }, 120000)
-        res.send({
-            "message": "verification mail sent! OTP will expire in 120 seconds"
-        })
+        const mailArr = []
+        mails.forEach(mail => mailArr.push(mail.email))
+        console.log(mails);
+        if(userEmail === undefined){
+            res.send('please provide email as request')
+        }
+        if(mailArr.includes(userEmail)){
+            res.status(400).send('this email is already in use')
+        }
+        else{
+            otpObj[userEmail] = Math.floor(Math.random()*1000000).toString()
+            verificationMail(userEmail, otpObj[userEmail])
+            res.clearCookie('verifiedEmail')
+            setTimeout(()=>{
+                otpObj[userEmail] = undefined
+            }, 120000)
+            res.send({
+                "message": "verification mail sent! OTP will expire in 120 seconds"
+            })
+        }
     }
     catch(e){
         res.status(404).json({
