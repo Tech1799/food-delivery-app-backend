@@ -42,7 +42,7 @@ const signupCustomer = async(req, res)=> {
         const user = await User.findOne({otp: verifiedEmailCookie})
         if(user.isVerified == true){
             updates.forEach(update => user[update] = req.body[update])
-            user.roles = ['customer dashboard', 'add to cart', 'payment checkout', 'order history']
+            user.roles = 'Customer'
             user.otp = undefined
             await user.save()
             res.send({ "message": "user signup successfully!" })

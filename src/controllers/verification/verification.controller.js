@@ -1,24 +1,24 @@
 // const express = require('express')
 const User = require('../../models/User')
 const { verificationMail } = require('../../emails/signupOTP');
-var userEmail = ''
-var otp;
+var otpObj = {};
+
 
 const sendVerificationMail = async (req, res) => {
-    userEmail =  req.body.email
+    const userEmail =  req.body.email
     try{
         const mails = await User.find().select('email')
         mails.forEach(mail => {
             if(mail.email === userEmail){
-                // res.status(400).send('this email is already in use')
-                throw new Error('this email is already in use!')
+                return res.status(400).send('this email is already in use')
+                // throw new Error('this email is already in use!')
             }
         })
-        otp = Math.floor(Math.random()*1000000).toString()
-        verificationMail(userEmail, otp)
+        otpObj[userEmail] = Math.floor(Math.random()*1000000).toString()
+        verificationMail(userEmail, otpObj[userEmail])
         res.clearCookie('verifiedEmail')
         setTimeout(()=>{
-            otp = undefined
+            otpObj[userEmail] = undefined
         }, 120000)
         res.send({
             "message": "verification mail sent! OTP will expire in 120 seconds"
@@ -33,23 +33,22 @@ const sendVerificationMail = async (req, res) => {
 
 const otpVerify = async (req, res) => {
     try{
-        if(req.body.otp != otp){
+        const userEmail = req.body.email
+        if(req.body.otp != otpObj[userEmail]){
             res.status(400).send({
                 "error": "otp not matched"
             })
         }
         else{
-            console.log('otp checking is okay!')
-            req.body.name = 'John Doe'
-            req.body.email = userEmail
-            req.body.password = 'password'
-            req.body.roles = ''
-            req.body.otp = otp
-            req.body.isVerified = true
-            const user = new User(...req.body)
-            console.log(user);
+            const user = new User({
+                name: 'John Doe',
+                email: userEmail,
+                password: 'password',
+                otp: req.body.otp,
+                isVerified: true
+            })
             await user.save()
-            res.cookie('verifiedEmail', otp, {
+            res.cookie('verifiedEmail', req.body.otp, {
                 httpOnly: true,
                 maxAge: 259200*1000
             })
