@@ -1,6 +1,6 @@
 const User = require('../../models/User')
 const Otp = require('../../models/Otp')
-// const { verificationMail } = require('../../emails/signupOTP');
+const { verificationMail } = require('../../emails/signupOTP');
 
 
 const sendVerificationMail = async (req, res) => {
@@ -25,7 +25,7 @@ const sendVerificationMail = async (req, res) => {
                 otp: rawOtp,
             })
             console.log(otp);
-            // verificationMail(userEmail, rawOtp)
+            verificationMail(userEmail, rawOtp)
             await otp.save()
             res.clearCookie('unverifiedEmail')
             res.cookie('unverifiedEmail', userEmail, {
@@ -66,7 +66,7 @@ const otpVerify = async (req, res) => {
         else{
             const user = new User({
                 name: 'John Doe',
-                email: otp.email,
+                email: userEmail,
                 password: 'password',
                 otp: otp.otp,
                 isVerified: true
@@ -76,17 +76,15 @@ const otpVerify = async (req, res) => {
                 httpOnly: true,
                 maxAge: 259200*1000
             })
-            // await user.save()
+            await user.save()
             res.send({
-                user,
                 "message": "email is verified"
             })
         }
     }
     catch(err){
         res.status(400).json({
-            error: err.message,
-            // error: "otp is not verified"
+            error: err.message
         })
     }
 }
